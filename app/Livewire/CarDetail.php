@@ -30,7 +30,7 @@ class CarDetail extends Component
         $this->car = Car::findOrFail($id);
     }
 
-    // Hitung rental
+    // Hitung rental (tidak mengurangi stok)
     public function updatedStartDate()
     {
         $this->calculateRental();
@@ -51,6 +51,7 @@ class CarDetail extends Component
                 $this->total_days = $start->diffInDays($end) + 1;
                 $this->total_price = $this->total_days * $this->car->rental_price;
                 $this->dp_amount = ($this->total_price * $this->dp_percent) / 100;
+
                 $this->rental_selected = true;
                 $this->buy_selected = false;
                 $this->show_payment = true;
@@ -71,44 +72,51 @@ class CarDetail extends Component
         $this->show_payment = false;
     }
 
+    // Pilih mode beli sekarang
     public function selectBuy()
     {
         $this->buy_selected = true;
         $this->rental_selected = false;
+
+        // Total price untuk beli = harga mobil
+        $this->total_price = $this->car->sale_price;
+        $this->dp_amount = ($this->total_price * $this->dp_percent) / 100;
+
         $this->show_payment = true;
     }
 
+    // Bayar (Cash / Transfer / QRIS)
     public function pay($method)
     {
         $this->payment_method = $method;
 
+        // Kurangi stok HANYA jika masih > 0
+        if ($this->car->stock > 0) {
+            $this->car->decrement('stock', 1);
+
+            if ($this->car->stock == 0) {
+                $this->car->update(['status' => 'sold']);
+            }
+        }
+
+        // Lakukan aksi pembayaran / redirect
         if ($method === 'cash') {
-            // Cash: buka lokasi bengkel
-            return redirect()->to('https://maps.app.goo.gl/7zp2LEHnAiPqR1ha9');
+            return redirect()->to('https://maps.app.goo.gl/LQ4c8YWrqnGsyfYy9');
         } elseif ($method === 'transfer') {
-            // Transfer: arahkan ke WA + info bank
-            return redirect()->to('https://wa.me/6281234567890?text=Transfer+Bank:+BANK+XYZ+NoRek+123456789+Nama+Johan');
+            return redirect()->to('https://wa.me/6281211530518?text=Transfer+Bank:+BANK+XYZ+NoRek+123456789+Nama+Johan');
         } elseif ($method === 'qris') {
-            // QRIS: tampil gambar QRIS
-            $this->qris_url = asset('qris/example.png'); // letakkan file QRIS di public/qris/example.png
+            $this->qris_url = asset('qris/example.png'); 
         }
 
-        // Update stok
-        if($this->rental_selected && $this->car->stock > 0) {
-            $this->car->decrement('stock', 1);
-        } elseif($this->buy_selected && $this->car->stock > 0) {
-            $this->car->decrement('stock', 1);
-        }
-
-        if ($this->car->stock == 0) {
-            $this->car->update(['status' => 'sold']);
-        }
+        $this->show_payment = true;
     }
+
+
 
     public function delete()
     {
         $this->car->delete();
-        return redirect('/');
+        return redirect('/showroom');
     }
 
     public function render()

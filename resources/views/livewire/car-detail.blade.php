@@ -1,95 +1,128 @@
-<div class="max-w-6xl mx-auto p-6">
+<div class="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-black text-gray-100">
+    <div class="max-w-7xl mx-auto px-6 py-10 space-y-8">
 
-    <a href="/" class="text-blue-600 mb-4 inline-block">← Kembali ke Showroom</a>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 bg-white p-6 rounded-xl shadow">
-
-        {{-- FOTO --}}
-        <div class="h-80 bg-gray-200 rounded-lg overflow-hidden">
-            @if($car->photo)
-                <img src="{{ asset('storage/'.$car->photo) }}" class="w-full h-full object-cover">
-            @else
-                <div class="h-full flex items-center justify-center text-gray-400">No Image</div>
-            @endif
-
+        {{-- Header --}}
+        <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+            <div>
+                <h1 class="text-4xl font-extrabold tracking-wide">{{ $car->name }}</h1>
+                <p class="text-gray-400 mt-1">{{ $car->brand }} • Tahun {{ $car->year }}</p>
+            </div>
+            <a href="{{ route('showroom') }}" class="bg-gray-800 hover:bg-gray-700 px-5 py-2 rounded-lg shadow font-semibold transition">
+                ← Kembali ke Showroom
+            </a>
         </div>
 
-        {{-- INFO --}}
-        <div>
-            <h1 class="text-3xl font-bold">{{ $car->name }}</h1>
-            <p class="text-gray-500">{{ $car->brand }} • {{ $car->year }}</p>
-            <p class="mt-4 text-xl font-semibold text-blue-600">
-                Harga Rental / Hari: Rp {{ number_format($car->rental_price,0,',','.') }}
-            </p>
-            <p class="mt-2 text-xl font-semibold text-green-700">
-                Harga Jual: Rp {{ number_format($car->sale_price,0,',','.') }}
-            </p>
-            <p class="mt-2 text-gray-700">Stok: <b>{{ $car->stock }}</b></p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
 
-            <span class="inline-block mt-3 px-4 py-1 rounded-full text-sm
-                @if($car->status === 'available') bg-green-100 text-green-700
-                @elseif($car->status === 'rented') bg-yellow-100 text-yellow-700
-                @else bg-red-100 text-red-700
-                @endif">
-                {{ ucfirst($car->status) }}
-            </span>
+            {{-- LEFT : IMAGE --}}
+            <div class="space-y-4">
+                <div class="relative rounded-xl overflow-hidden shadow-2xl border border-white/10 bg-black">
+                    <img src="{{ asset('storage/'.$car->photo) }}" class="w-full h-[420px] object-cover hover:scale-105 transition duration-700">
+                </div>
+            </div>
 
-            {{-- Tombol Beli --}}
-            @if(!$rental_selected && $car->status === 'available')
-                <button wire:click="selectBuy" class="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg">
-                    Beli Sekarang
-                </button>
-            @endif
+            {{-- RIGHT : INFO --}}
+            <div class="space-y-6">
 
-            {{-- Rental --}}
-            @if(!$buy_selected)
-                <div class="mt-4" @if($rental_selected) style="display:block;" @endif>
-                    <h2 class="text-xl font-semibold mb-2">Rental Mobil</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <input type="date" wire:model.live="start_date" class="border rounded p-2">
-                        <input type="date" wire:model.live="end_date" class="border rounded p-2">
+                {{-- PRICE --}}
+                <div class="bg-white/5 backdrop-blur rounded-xl p-5 shadow-lg border border-white/10">
+                    <p class="text-2xl font-bold text-green-700">
+                        Harga Beli : <span class="text-green-800"> Rp {{ number_format($car->sale_price, 0, ',', '.') }} </span>
+                    </p>
+                    <p class="text-2xl font-bold text-blue-600">
+                        Harga Rental : <span class="text-blue-700"> Rp {{ number_format($car->rental_price, 0, ',', '.') }}/hari </span>
+                    </p>
+                    <p class="text-gray-400 mt-2"> Stok tersedia: <span class="font-bold">{{ $car->stock }}</span> </p>
+                </div>
+
+                {{-- SPEC --}}
+                @if($car->mileage || $car->exterior_color)
+                    <div class="bg-white/5 backdrop-blur rounded-xl p-5 border border-white/10">
+                        <h2 class="text-lg font-semibold mb-3 border-b border-white/10 pb-2">Spesifikasi</h2>
+                        <table class="w-full text-gray-300">
+                            @if($car->mileage)<tr><td>Mileage</td><td>{{ $car->mileage }}</td></tr>@endif
+                            @if($car->exterior_color)<tr><td>Exterior</td><td>{{ $car->exterior_color }}</td></tr>@endif
+                            @if($car->interior_color)<tr><td>Interior</td><td>{{ $car->interior_color }}</td></tr>@endif
+                            @if($car->trim)<tr><td>Trim</td><td>{{ $car->trim }}</td></tr>@endif
+                            @if($car->driver_position)<tr><td>Driver</td><td>{{ $car->driver_position }}</td></tr>@endif
+                        </table>
                     </div>
+                @endif
 
-                    @if($rental_selected)
-                        <div class="mt-4 bg-gray-50 p-4 rounded-lg">
-                            <p>Lama Sewa: <b>{{ $total_days }} hari</b></p>
-                            <p>Total Harga: <b class="text-blue-600">Rp {{ number_format($total_price,0,',','.') }}</b></p>
-                            <p>DP ({{ $dp_percent }}%): <b class="text-green-600">Rp {{ number_format($dp_amount,0,',','.') }}</b></p>
+                {{-- BUY / RENT --}}
+                <div class="bg-white/5 backdrop-blur rounded-xl p-5 border border-white/10 space-y-4">
+                    
+                    {{-- RENT DATE --}}
+                    @if(!$buy_selected)
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <input type="date" wire:model.lazy="start_date" class="bg-black/40 border border-white/10 rounded px-3 py-2">
+                            <input type="date" wire:model.lazy="end_date" class="bg-black/40 border border-white/10 rounded px-3 py-2">
+                        </div>
+                    @endif
 
-                            <h2 class="mt-4 font-semibold">Metode Pembayaran</h2>
-                            <div class="flex gap-3 mt-2">
-                                <button wire:click="pay('cash')" class="bg-gray-500 text-white px-4 py-2 rounded">Cash</button>
-                                <button wire:click="pay('transfer')" class="bg-green-500 text-white px-4 py-2 rounded">Transfer</button>
-                                <button wire:click="pay('qris')" class="bg-purple-500 text-white px-4 py-2 rounded">QRIS</button>
+                    {{-- BUY BUTTON --}}
+                    @if(!$buy_selected && !$rental_selected)
+                        <button wire:click="selectBuy" class="w-full bg-emerald-600 hover:bg-emerald-700 py-3 rounded-lg font-bold">
+                            Beli Sekarang
+                        </button>
+                    @endif
+
+                    {{-- TOTAL --}}
+                    @if($total_price > 0)
+                        <div class="text-sm text-gray-300">
+                            <p>Total Harga: <b>Rp {{ number_format($total_price,0,',','.') }}</b></p>
+                            <p>DP {{ $dp_percent }}%: <b>Rp {{ number_format($dp_amount,0,',','.') }}</b></p>
+                        </div>
+                    @endif
+
+                    {{-- PAYMENT --}}
+                    @if($show_payment)
+                        <div class="space-y-3">
+                            <p class="font-semibold">Metode Pembayaran</p>
+                            <div class="flex gap-3 flex-wrap">
+
+                                <button 
+                                    wire:click="pay('cash')" 
+                                    class="px-4 py-2 bg-sky-600 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                                    @if($car->stock == 0) disabled @endif
+                                >
+                                    Cash
+                                </button>
+
+                                <button 
+                                    wire:click="pay('transfer')" 
+                                    class="px-4 py-2 bg-yellow-500 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                                    @if($car->stock == 0) disabled @endif
+                                >
+                                    Transfer
+                                </button>
+
+                                <button 
+                                    wire:click="pay('qris')" 
+                                    class="px-4 py-2 bg-gray-700 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                                    @if($car->stock == 0) disabled @endif
+                                >
+                                    QRIS
+                                </button>
                             </div>
 
+                            {{-- Tampilkan QRIS jika dipilih --}}
                             @if($qris_url)
-                                <div class="mt-4">
-                                    <img src="{{ $qris_url }}" class="h-48 w-48 object-contain">
-                                </div>
+                                <img src="{{ $qris_url }}" class="w-48 mt-3 rounded shadow">
                             @endif
                         </div>
                     @endif
-                </div>
-            @endif
 
-            {{-- Buy --}}
-            @if($buy_selected)
-                <div class="mt-4 bg-gray-50 p-4 rounded-lg">
-                    <h2 class="text-xl font-semibold mb-2">Metode Pembayaran</h2>
-                    <div class="flex gap-3 mt-2">
-                        <button wire:click="pay('cash')" class="bg-gray-500 text-white px-4 py-2 rounded">Cash</button>
-                        <button wire:click="pay('transfer')" class="bg-green-500 text-white px-4 py-2 rounded">Transfer</button>
-                        <button wire:click="pay('qris')" class="bg-purple-500 text-white px-4 py-2 rounded">QRIS</button>
-                    </div>
 
-                    @if($qris_url)
-                        <div class="mt-4">
-                            <img src="{{ $qris_url }}" class="h-48 w-48 object-contain">
-                        </div>
-                    @endif
                 </div>
-            @endif
+
+                {{-- CONTACT --}}
+                <div class="flex gap-4">
+                    <a href="https://www.instagram.com/sakiyyl?igsh=bHVpZWNoaXQyaDlr" class="flex-1 bg-sky-600 hover:bg-sky-700 py-3 rounded-lg text-center font-semibold"> Call Ceo </a>
+                    <a href="https://wa.me/085787091311" target="_blank" class="flex-1 bg-emerald-600 hover:bg-emerald-700 py-3 rounded-lg text-center font-semibold"> WhatsApp </a>
+                </div>
+
+            </div>
         </div>
     </div>
 </div>

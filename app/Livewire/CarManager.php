@@ -6,24 +6,30 @@ use Livewire\Component;
 use Livewire\WithFileUploads;
 use App\Models\Car;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class CarManager extends Component
 {
     use WithFileUploads;
 
     public $cars;
-    public $name, $brand, $year;
-    public $sale_price, $rental_price;
+
+    public $name;
+    public $brand;
+    public $year;
+    public $rental_price;
+    public $sale_price;
     public $stock;
     public $photo;
+
     public $user_role = 'guest';
 
     protected $rules = [
-        'name' => 'required',
-        'brand' => 'required',
+        'name' => 'required|string',
+        'brand' => 'required|string',
         'year' => 'required|numeric',
-        'sale_price' => 'required|numeric|min:1',
         'rental_price' => 'required|numeric|min:1',
+        'sale_price' => 'required|numeric|min:1',
         'stock' => 'required|numeric|min:0',
         'photo' => 'nullable|image|max:2048',
     ];
@@ -44,7 +50,9 @@ class CarManager extends Component
 
     public function save()
     {
-        if ($this->user_role !== 'admin') return;
+        if ($this->user_role !== 'admin') {
+            return;
+        }
 
         $data = $this->validate();
 
@@ -62,9 +70,17 @@ class CarManager extends Component
 
     public function delete($id)
     {
-        if ($this->user_role !== 'admin') return;
+        if ($this->user_role !== 'admin') {
+            return;
+        }
 
-        Car::findOrFail($id)->delete();
+        $car = Car::findOrFail($id);
+
+        if ($car->photo && Storage::disk('public')->exists($car->photo)) {
+            Storage::disk('public')->delete($car->photo);
+        }
+
+        $car->delete();
         $this->loadCars();
     }
 
@@ -80,15 +96,20 @@ class CarManager extends Component
     private function resetForm()
     {
         $this->reset([
-            'name','brand','year',
-            'sale_price','rental_price',
-            'stock','photo'
+            'name',
+            'brand',
+            'year',
+            'rental_price',
+            'sale_price',
+            'stock',
+            'photo',
         ]);
     }
 
     public function render()
     {
-        return view('livewire.car-manager')
-            ->layout('layouts.app');
+        return view('livewire.car-manager', [
+            'cars' => Car::latest()->get(),
+        ]);
     }
 }
