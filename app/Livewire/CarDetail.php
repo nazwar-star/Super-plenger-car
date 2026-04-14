@@ -5,10 +5,13 @@ namespace App\Livewire;
 use Livewire\Component;
 use App\Models\Car;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 
 class CarDetail extends Component
 {
     public Car $car;
+
+public Collection $relatedCars;
 
     // Rental
     public $start_date;
@@ -26,20 +29,22 @@ class CarDetail extends Component
     public $qris_url;
 
     public function mount($id)
-    {
-        $this->car = Car::findOrFail($id);
-    }
+{
+    $this->car = Car::with('images')->findOrFail($id);
 
-    // Hitung rental (tidak mengurangi stok)
-    public function updatedStartDate()
-    {
-        $this->calculateRental();
-    }
+    // mobil sejenis (brand sama, kecuali mobil ini)
+    $this->relatedCars = Car::where('brand', $this->car->brand)
+        ->where('id', '!=', $this->car->id)
+        ->latest()
+        ->take(4)
+        ->get();
+}
 
-    public function updatedEndDate()
-    {
-        $this->calculateRental();
-    }
+
+
+    // Rental date updated
+    public function updatedStartDate() { $this->calculateRental(); }
+    public function updatedEndDate() { $this->calculateRental(); }
 
     private function calculateRental()
     {
@@ -72,25 +77,21 @@ class CarDetail extends Component
         $this->show_payment = false;
     }
 
-    // Pilih mode beli sekarang
+    // Beli sekarang
     public function selectBuy()
     {
         $this->buy_selected = true;
         $this->rental_selected = false;
-
-        // Total price untuk beli = harga mobil
         $this->total_price = $this->car->sale_price;
         $this->dp_amount = ($this->total_price * $this->dp_percent) / 100;
-
         $this->show_payment = true;
     }
 
-    // Bayar (Cash / Transfer / QRIS)
+    // Payment method
     public function pay($method)
     {
         $this->payment_method = $method;
 
-        // Kurangi stok HANYA jika masih > 0
         if ($this->car->stock > 0) {
             $this->car->decrement('stock', 1);
 
@@ -99,20 +100,18 @@ class CarDetail extends Component
             }
         }
 
-        // Lakukan aksi pembayaran / redirect
         if ($method === 'cash') {
             return redirect()->to('https://maps.app.goo.gl/LQ4c8YWrqnGsyfYy9');
         } elseif ($method === 'transfer') {
             return redirect()->to('https://wa.me/6281211530518?text=Transfer+Bank:+BANK+XYZ+NoRek+123456789+Nama+Johan');
         } elseif ($method === 'qris') {
-            $this->qris_url = asset('qris/example.png'); 
+            $this->qris_url = asset('qris/example.png');
         }
 
         $this->show_payment = true;
     }
 
-
-
+    // Delete mobil (opsional)
     public function delete()
     {
         $this->car->delete();

@@ -1,105 +1,177 @@
-<div class="min-h-screen flex items-center justify-center px-4
-            bg-gradient-to-br from-gray-950 via-gray-900 to-black">
+<div class="min-h-screen w-full flex items-center justify-center
+    bg-[#07090d] relative overflow-hidden text-white">
 
-    <div class="max-w-md w-full
-                bg-white/5 backdrop-blur-xl
-                border border-white/10
-                rounded-2xl shadow-2xl p-8">
+    <!-- ===== BACKGROUND MOBIL (SAMA SEPERTI LOGIN) ===== -->
+    <div class="absolute inset-0 z-0">
+        <img id="bgCar"
+             src="{{ asset('images/showroom-car1.jpg') }}"
+             class="w-full h-full object-cover object-center
+                    scale-105 contrast-110 saturate-110 transition-opacity duration-1000"
+             loading="eager"
+             decoding="async">
+    </div>
 
-        {{-- TITLE --}}
-        <h2 class="text-2xl font-bold text-center text-white mb-1">
-            Daftar Akun Baru
-        </h2>
-        <p class="text-center text-sm text-gray-400 mb-6">
-            Bergabung dan temukan mobil impian Anda
-        </p>
+    <div class="absolute inset-0 z-0
+        bg-[radial-gradient(circle_at_center,transparent_40%,rgba(0,0,0,0.55))]">
+    </div>
 
-        {{-- ERROR --}}
-        @if(session()->has('error'))
-            <div class="bg-red-500/10 text-red-400 p-3 mb-4 rounded-lg text-sm">
-                {{ session('error') }}
-            </div>
-        @endif
+    <div class="absolute inset-0 z-0
+        bg-gradient-to-b from-black/40 via-transparent to-black/70">
+    </div>
 
-        {{-- FORM --}}
-        <form wire:submit.prevent="register" class="space-y-4">
+    <!-- ===== AMBIENT LIGHT ===== -->
+    <div class="absolute inset-0">
+        <div class="absolute top-[-200px] left-1/2 -translate-x-1/2 w-[900px] h-[500px]
+            bg-emerald-500/10 blur-[140px] rounded-full"></div>
 
-            <div>
-                <label class="text-sm text-gray-400">Nama Lengkap</label>
-                <input
-                    type="text"
-                    wire:model.defer="name"
-                    placeholder="Nama Lengkap"
-                    autocomplete="off"
-                    class="w-full mt-1 px-4 py-3 rounded-lg
-                           bg-black/40 border border-white/10
-                           text-white placeholder-gray-500
-                           focus:outline-none focus:ring-2 focus:ring-gray-600"
-                >
-            </div>
+        <div class="absolute bottom-[-200px] right-[-200px] w-[600px] h-[600px]
+            bg-cyan-400/10 blur-[160px] rounded-full"></div>
+    </div>
 
-            <div>
-                <label class="text-sm text-gray-400">Email</label>
-                <input
-                    type="email"
-                    wire:model.defer="email"
-                    placeholder="email@gmail.com"
-                    autocomplete="off"
-                    class="w-full mt-1 px-4 py-3 rounded-lg
-                           bg-black/40 border border-white/10
-                           text-white placeholder-gray-500
-                           focus:outline-none focus:ring-2 focus:ring-gray-600"
-                >
-            </div>
+    <!-- ===== CARD REGISTER ===== -->
+    <div class="relative w-full max-w-md px-6">
 
-            <div>
-                <label class="text-sm text-gray-400">Password</label>
-                <input
-                    type="password"
-                    wire:model.defer="password"
-                    placeholder="••••••••"
-                    autocomplete="new-password"
-                    class="w-full mt-1 px-4 py-3 rounded-lg
-                           bg-black/40 border border-white/10
-                           text-white placeholder-gray-500
-                           focus:outline-none focus:ring-2 focus:ring-gray-600"
-                >
+        <!-- Glow border -->
+        <div class="absolute -inset-[1px] rounded-3xl
+            bg-gradient-to-r from-emerald-500/30 via-cyan-400/20 to-emerald-500/30
+            blur-lg opacity-60">
+        </div>
+
+        <div class="relative
+            bg-white/[0.04]
+            backdrop-blur-2xl
+            border border-white/10
+            shadow-[0_0_60px_rgba(16,185,129,0.15)]
+            rounded-3xl p-8">
+
+            <!-- HEADER -->
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center gap-3 mb-4">
+                    <div class="w-10 h-[2px] bg-emerald-400"></div>
+                    <p class="text-xs tracking-[0.4em] text-gray-400">
+                        MEMBER REGISTRATION
+                    </p>
+                    <div class="w-10 h-[2px] bg-emerald-400"></div>
+                </div>
+
+                <h2 class="text-3xl font-semibold tracking-wide">
+                    Daftar Akun Baru
+                </h2>
+
+                <p class="text-gray-400 text-sm mt-2">
+                    Bergabung dan temukan mobil impian Anda
+                </p>
             </div>
 
-            <div>
-                <label class="text-sm text-gray-400">Konfirmasi Password</label>
-                <input
-                    type="password"
-                    wire:model.defer="password_confirmation"
-                    placeholder="••••••••"
-                    autocomplete="new-password"
-                    class="w-full mt-1 px-4 py-3 rounded-lg
-                           bg-black/40 border border-white/10
-                           text-white placeholder-gray-500
-                           focus:outline-none focus:ring-2 focus:ring-gray-600"
-                >
+            @if(session()->has('error'))
+                <div class="bg-red-500/10 text-red-400 p-3 mb-4 rounded-lg text-sm border border-red-500/20 text-center">
+                    {{ session('error') }}
+                </div>
+            @endif
+
+            <!-- FORM -->
+            <form wire:submit.prevent="register" class="space-y-5">
+
+                <div>
+                    <label class="text-xs tracking-widest text-gray-400">
+                        NAMA LENGKAP
+                    </label>
+                    <input type="text"
+                        wire:model.defer="name"
+                        placeholder="Nama Lengkap"
+                        class="w-full mt-2 px-4 py-3 rounded-xl
+                            bg-black/40 border border-white/10 text-gray-100
+                            focus:outline-none focus:border-emerald-400/50
+                            focus:ring-1 focus:ring-emerald-400/40 transition">
+                </div>
+
+                <div>
+                    <label class="text-xs tracking-widest text-gray-400">
+                        EMAIL ADDRESS
+                    </label>
+                    <input type="email"
+                        wire:model.defer="email"
+                        placeholder="email@example.com"
+                        class="w-full mt-2 px-4 py-3 rounded-xl
+                            bg-black/40 border border-white/10 text-gray-100
+                            focus:outline-none focus:border-emerald-400/50
+                            focus:ring-1 focus:ring-emerald-400/40 transition">
+                </div>
+
+                <div>
+                    <label class="text-xs tracking-widest text-gray-400">
+                        PASSWORD
+                    </label>
+                    <input type="password"
+                        wire:model.defer="password"
+                        placeholder="••••••••"
+                        class="w-full mt-2 px-4 py-3 rounded-xl
+                            bg-black/40 border border-white/10 text-gray-100
+                            focus:outline-none focus:border-emerald-400/50
+                            focus:ring-1 focus:ring-emerald-400/40 transition">
+                </div>
+
+                <div>
+                    <label class="text-xs tracking-widest text-gray-400">
+                        KONFIRMASI PASSWORD
+                    </label>
+                    <input type="password"
+                        wire:model.defer="password_confirmation"
+                        placeholder="••••••••"
+                        class="w-full mt-2 px-4 py-3 rounded-xl
+                            bg-black/40 border border-white/10 text-gray-100
+                            focus:outline-none focus:border-emerald-400/50
+                            focus:ring-1 focus:ring-emerald-400/40 transition">
+                </div>
+
+                <button type="submit"
+                    class="w-full py-3 rounded-xl
+                        bg-gradient-to-r from-emerald-500 to-emerald-600
+                        hover:from-emerald-400 hover:to-emerald-500
+                        text-black font-semibold tracking-wide
+                        shadow-lg shadow-emerald-500/20 transition">
+                    DAFTAR SEKARANG
+                </button>
+            </form>
+
+            <!-- FOOTER -->
+            <div class="mt-8 text-center text-sm text-gray-400">
+                Sudah punya akun?
+                <a href="{{ route('login') }}"
+                   class="text-emerald-400 hover:text-emerald-300 font-semibold">
+                    Login di sini
+                </a>
             </div>
 
-            {{-- BUTTON --}}
-            <button
-                type="submit"
-                class="w-full mt-4 py-3 rounded-lg
-                       bg-gradient-to-r from-gray-200 to-gray-400
-                       text-black font-semibold
-                       hover:from-gray-300 hover:to-gray-500
-                       transition shadow-lg"
-            >
-                Daftar Sekarang
-            </button>
-        </form>
+            <div class="mt-8 pt-6 border-t border-white/10 text-center">
+                <p class="text-xs tracking-[0.3em] text-gray-500">
+                    PLENGER CAR INDONESIA
+                </p>
+            </div>
 
-        {{-- FOOTER --}}
-        <p class="mt-6 text-center text-sm text-gray-400">
-            Sudah punya akun?
-            <a href="{{ route('login') }}"
-               class="text-gray-200 font-semibold hover:underline">
-                Login di sini
-            </a>
-        </p>
+        </div>
     </div>
 </div>
+
+<!-- AUTO SLIDE BACKGROUND -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const images = [
+        "{{ asset('images/showroom-car1.jpg') }}",
+        "{{ asset('images/showroom-car2.jpg') }}",
+        "{{ asset('images/showroom-car3.jpg') }}"
+    ];
+
+    let i = 0;
+    const el = document.getElementById("bgCar");
+
+    setInterval(() => {
+        el.style.opacity = 0;
+        setTimeout(() => {
+            i = (i + 1) % images.length;
+            el.src = images[i];
+            el.style.opacity = 1;
+        }, 500);
+    }, 6000);
+});
+</script>

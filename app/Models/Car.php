@@ -3,10 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Car extends Model
 {
-        protected $fillable = [
+    use HasFactory;
+
+    protected $fillable = [
         'name',
         'brand',
         'year',
@@ -14,17 +17,30 @@ class Car extends Model
         'sale_price',
         'stock',
         'photo',
+        'description',
+        'youtube_url',
+        'model_3d',
         'status',
     ];
 
-    public function rentals()
-{
-    return $this->hasMany(Rental::class);
-}
-public function services()
-{
-    return $this->hasMany(Service::class);
-}
+    /**
+     * RELATION: banyak option
+     */
+    public function options()
+    {
+        return $this->hasMany(CarOption::class);
+    }
+    public function orders()
+    {
+        return $this->hasMany(CarOrder::class);
+    }
 
 
+    /**
+     * RELATION: banyak gambar (gallery)
+     */
+    public function images()
+    {
+        return $this->hasMany(CarImage::class);
+    }
 }

@@ -8,12 +8,15 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('service_items', function (Blueprint $table) {
-        $table->id();
-        $table->foreignId('service_id')->constrained()->cascadeOnDelete();
-        $table->string('item_name'); // WAJIB ADA
-        $table->integer('price');
-        $table->timestamps();
-    });
+    $table->id();
+    $table->string('item_name'); // nama item: oli, ban, aki
+    $table->string('category')->nullable(); // oli, ban, aki
+    $table->integer('price');
+    $table->integer('stock')->default(0);
+        $table->string('image')->nullable();
+    $table->timestamps();
+});
+
     }
 
     public function down(): void

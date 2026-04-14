@@ -3,136 +3,233 @@
 namespace App\Livewire;
 
 use Livewire\Component;
-use App\Models\Service;
+use Livewire\WithFileUploads;
 use App\Models\ServiceItem;
 use App\Models\ServiceMaster;
-use App\Models\Car; // model mobil showroom
+use App\Models\Service;
+use Illuminate\Support\Facades\Storage;
 
 class ServiceManager extends Component
 {
-    public $customer_name, $car_name, $plate_number, $service_date;
-    public $activeServiceId = null;
+    use WithFileUploads;
 
-    // =====================
-    // MULAI SERVICE
-    // =====================
-    public function startService()
+    // ==================== PROPERTIES ====================
+    public $activeTab = 'bengkel';
+
+    // Service Item
+    public $item_name, $category, $price, $stock, $item_id, $image;
+    public $serviceItems;
+
+    // Service Master / Jasa
+    public $service_name, $service_price, $service_id;
+    public $services;
+
+    // Keranjang
+    public $cartData = [];
+    public $showCart = false;
+    public $serviceType = null;
+    public $selectedServiceMaster;
+    public $serviceDate, $serviceTime;
+
+    // ==================== VALIDATION ====================
+    protected $rules = [
+        'item_name' => 'required|string',
+        'category' => 'required|string',
+        'price' => 'required|numeric|min:0',
+        'stock' => 'required|numeric|min:0',
+        'image' => 'nullable|image|max:1024',
+
+        'service_name' => 'required|string',
+        'service_price' => 'required|numeric|min:0',
+    ];
+
+    // ==================== MOUNT ====================
+    public function mount()
     {
-        $this->validate([
-            'customer_name' => 'required|string',
-            'car_name'      => 'required|string',
-            'plate_number'  => 'required|string',
-            'service_date'  => 'required|date',
-        ]);
-
-        $service = Service::create([
-            'customer_name' => $this->customer_name,
-            'car_name'      => $this->car_name,
-            'plate_number'  => $this->plate_number,
-            'service_date'  => $this->service_date,
-            'status'        => 'process',
-            'total_price'   => 0,
-        ]);
-
-        $this->activeServiceId = $service->id;
-        $this->resetForm();
-        $this->recalculate();
+        $this->serviceItems = ServiceItem::where('stock','>',0)->get();
+        $this->services = ServiceMaster::all();
     }
 
-    // =====================
-    // TAMBAH ITEM
-    // =====================
-    public function addItem($masterId)
-    {
-        if (!$this->activeServiceId) return;
-
-        $master = ServiceMaster::findOrFail($masterId);
-
-        ServiceItem::create([
-            'service_id' => $this->activeServiceId,
-            'item_name'  => $master->name,
-            'price'      => $master->price,
-        ]);
-
-        $this->recalculate();
-    }
-
-    // =====================
-    // HAPUS ITEM
-    // =====================
-    public function removeItem($itemId)
-    {
-        ServiceItem::where('id', $itemId)
-            ->where('service_id', $this->activeServiceId)
-            ->delete();
-
-        $this->recalculate();
-    }
-
-    // =====================
-    // HITUNG TOTAL
-    // =====================
-    private function recalculate()
-    {
-        if(!$this->activeServiceId) return;
-
-        $total = ServiceItem::where('service_id', $this->activeServiceId)->sum('price');
-        Service::where('id', $this->activeServiceId)->update(['total_price' => $total]);
-    }
-
-    // =====================
-    // SELESAI SERVICE
-    // =====================
-    public function finishService($id)
-    {
-        Service::where('id', $id)->update(['status' => 'finished']);
-        $this->activeServiceId = null;
-    }
-
-    // =====================
-    // RESET FORM
-    // =====================
-    private function resetForm()
-    {
-        $this->customer_name = '';
-        $this->car_name = '';
-        $this->plate_number = '';
-        $this->service_date = '';
-    }
-
-    // =====================
-    // LIST SHOWROOM MOBIL
-    // =====================
-    public function getShowroomCarsProperty()
-    {
-        return Car::all(); // semua mobil showroom
-    }
-
-    // =====================
-    // RIWAYAT SERVICE
-    // =====================
-    public function getHistoryServicesProperty()
-    {
-        return Service::where('status', 'finished')
-            ->latest()
-            ->with('items')
-            ->get();
-    }
-
-    // =====================
-    // RENDER
-    // =====================
     public function render()
     {
-        $activeService = $this->activeServiceId
-            ? Service::with('items')->find($this->activeServiceId)
-            : null;
+        return view('livewire.service-manager');
+    }
 
-        $masters = ServiceMaster::all();
+    // ==================== SERVICE ITEM METHODS ====================
+    public function saveItem()
+    {
+        if(auth()->user()->role !== 'admin') return;
 
-        return view('livewire.service-manager', [
-            'masters' => $masters,
-            'activeService' => $activeService,
+        $this->validate([
+        'item_name' => 'required|string',
+        'category' => 'required|string',
+        'price' => 'required|numeric|min:0',
+        'stock' => 'required|numeric|min:0',
+        'image' => 'nullable|image|max:1024',
+    ]);
+
+        // Upload image jika ada
+        $imagePath = null;
+        if ($this->image) {
+            $imagePath = $this->image->store('service-items', 'public');
+        }
+
+        ServiceItem::updateOrCreate(
+            ['id' => $this->item_id],
+            [
+                'item_name' => $this->item_name,
+                'category' => $this->category,
+                'price' => $this->price,
+                'stock' => $this->stock,
+                'image' => $imagePath ?? ($this->item_id ? ServiceItem::find($this->item_id)->image : null)
+            ]
+        );
+
+        $this->resetForm();
+        $this->serviceItems = ServiceItem::where('stock','>',0)->get();
+
+    }
+
+    public function editItem($id)
+    {
+        $item = ServiceItem::findOrFail($id);
+        $this->item_id = $item->id;
+        $this->item_name = $item->item_name;
+        $this->category = $item->category;
+        $this->price = $item->price;
+        $this->stock = $item->stock;
+        $this->image = null;
+    }
+
+    public function deleteItem($id)
+    {
+        ServiceItem::findOrFail($id)->delete();
+        $this->serviceItems = ServiceItem::where('stock','>',0)->get();
+
+    }
+
+    // ==================== SERVICE MASTER METHODS ====================
+    public function saveService()
+    {
+        if(auth()->user()->role !== 'admin') return;
+        $this->validate([
+            'service_name' => 'required|string',
+            'service_price' => 'required|numeric|min:0',
+            
+        ]);
+
+
+        ServiceMaster::updateOrCreate(
+            ['id' => $this->service_id],
+            [
+                'name' => $this->service_name,
+                'price' => $this->service_price,
+            ]
+        );
+
+        $this->resetForm();
+        $this->services = ServiceMaster::all();
+        
+    }
+
+    public function editService($id)
+    {
+        $s = ServiceMaster::findOrFail($id);
+        $this->service_id = $s->id;
+        $this->service_name = $s->name;
+        $this->service_price = $s->price;
+
+    }
+
+    public function deleteService($id)
+    {
+        ServiceMaster::findOrFail($id)->delete();
+        $this->services = ServiceMaster::all();
+    }
+
+    // ==================== CART METHODS ====================
+    public function addToCart($itemId)
+    {
+        $item = ServiceItem::findOrFail($itemId);
+
+        if(isset($this->cartData[$itemId])){
+            $this->cartData[$itemId]['qty'] += 1;
+        } else {
+            $this->cartData[$itemId] = [
+                'name' => $item->item_name,
+                'price' => $item->price,
+                'qty' => 1
+            ];
+        }
+    }
+    public function addServiceToCart($serviceId)
+{
+    $service = ServiceMaster::findOrFail($serviceId);
+
+    $key = 'service_'.$serviceId;
+
+    if(isset($this->cartData[$key])){
+        $this->cartData[$key]['qty'] += 1;
+    } else {
+        $this->cartData[$key] = [
+            'name' => $service->name,
+            'price' => $service->price,
+            'qty' => 1,
+            'type' => 'service'
+        ];
+    }
+}
+
+
+    public function removeFromCart($itemId)
+    {
+        if(isset($this->cartData[$itemId])){
+            unset($this->cartData[$itemId]);
+        }
+    }
+
+    public function calculateTotal()
+    {
+        $total = 0;
+        foreach($this->cartData as $item){
+            $total += $item['price'] * $item['qty'];
+        }
+        return $total;
+    }
+
+    public function checkoutCart()
+{
+    if(empty($this->cartData)) return;
+
+    Service::create([
+    'customer_name' => auth()->user()->name,
+
+    // WAJIB karena DB kamu minta
+    'car_name' => 'Service Bengkel',
+    'plate_number' => '-',
+
+    'service_type' => $this->serviceType,
+    'service_master_id' => $this->selectedServiceMaster,
+
+    'service_date' => $this->serviceDate ?? now(),
+    'service_time' => $this->serviceTime,
+
+    'total_price' => $this->calculateTotal(),
+    'status' => 'pending',
+]);
+
+
+    $this->cartData = [];
+    $this->showCart = false;
+
+    session()->flash('success', 'Booking service berhasil, menunggu persetujuan admin.');
+}
+    // ==================== RESET FORM ====================
+    public function resetForm()
+    {
+        $this->reset([
+            'item_name','category','price','stock','item_id','image',
+            'service_name','service_price','service_id'
         ]);
     }
 }

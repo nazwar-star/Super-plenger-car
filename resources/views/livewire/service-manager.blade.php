@@ -1,155 +1,232 @@
-<div class="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-black text-gray-100">
-    <div class="max-w-7xl mx-auto px-6 py-10 space-y-10">
+<div class="min-h-screen bg-gradient-to-br from-[#020617] via-[#050b17] to-black text-slate-100 p-6">
 
-        {{-- HEADER --}}
-        <div class="flex justify-between items-center">
-            <div>
-                <h1 class="text-3xl font-extrabold tracking-wide text-orange-400">
-                    Bengkel & Service
-                </h1>
-                <p class="text-gray-400 text-sm">
-                    Manajemen service kendaraan
-                </p>
-            </div>
+    {{-- HEADER --}}
+    <h1 class="text-3xl font-extrabold mb-1">Bengkel & Service</h1>
+    <p class="text-gray-400 mb-8">Pilih item untuk dibeli atau booking jasa service</p>
 
-            <a href="{{ route('showroom') }}"
-               class="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg text-sm font-semibold transition">
-                ← Kembali ke Showroom
-            </a>
-        </div>
+    {{-- TABS --}}
+    <div class="flex gap-4 mb-8">
+        <button wire:click="$set('activeTab','bengkel')"
+            class="px-4 py-2 rounded-lg font-semibold transition
+            {{ $activeTab === 'bengkel' ? 'bg-emerald-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700' }}">
+            Bengkel (Item)
+        </button>
+        <button wire:click="$set('activeTab','jasa')"
+            class="px-4 py-2 rounded-lg font-semibold transition
+            {{ $activeTab === 'jasa' ? 'bg-emerald-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700' }}">
+            Jasa Service
+        </button>
+    </div>
 
-        {{-- FORM MULAI SERVICE --}}
-        @if(!$activeService)
-            <div class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-xl p-6">
-                <h2 class="font-semibold mb-4 text-orange-300">Mulai Service Baru</h2>
+    {{-- ================= BENGKEL ================= --}}
+    @if($activeTab === 'bengkel')
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input wire:model.defer="customer_name"
-                           placeholder="Nama Pemilik"
-                           class="bg-black/40 border border-white/10 rounded-lg px-4 py-3">
+        {{-- FORM ADMIN TAMBAH / EDIT --}}
+        @if(auth()->user()->role === 'admin')
+            <div class="bg-gray-900 p-6 rounded-2xl shadow-xl mb-10 border border-gray-700">
+                <h2 class="text-xl font-semibold mb-5 flex items-center gap-2 text-emerald-400">
+                    <span class="text-2xl">+</span> Tambah / Edit Item
+                </h2>
 
-                    <input wire:model.defer="car_name"
-                           placeholder="Nama Mobil"
-                           class="bg-black/40 border border-white/10 rounded-lg px-4 py-3">
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                    <input type="text" wire:model="item_name" placeholder="Nama Item" class="input-dark">
+                    <input type="text" wire:model="category" placeholder="Kategori" class="input-dark">
+                    <input type="number" wire:model="price" placeholder="Harga" class="input-dark">
+                    <input type="number" wire:model="stock" placeholder="Stok" class="input-dark">
+                    <input type="file" wire:model="image" class="file-input-dark">
+                </div>
 
-                    <input wire:model.defer="plate_number"
-                           placeholder="Plat Nomor"
-                           class="bg-black/40 border border-white/10 rounded-lg px-4 py-3">
+                @if($image)
+                    <p class="text-sm mt-2 text-gray-300">Preview:</p>
+                    <img src="{{ $image->temporaryUrl() }}" class="w-32 h-32 object-cover rounded-xl mb-3">
+                @endif
 
-                    <input type="date" wire:model.defer="service_date"
-                           class="bg-black/40 border border-white/10 rounded-lg px-4 py-3">
-
-                    <button wire:click.prevent="startService"
-                            class="col-span-full mt-2
-                                   bg-gradient-to-r from-orange-500 to-amber-500
-                                   hover:from-orange-600 hover:to-amber-600
-                                   text-black font-semibold py-3 rounded-lg transition">
-                        Mulai Service
-                    </button>
+                <div class="flex justify-end mt-5 gap-3">
+                    <button wire:click="resetForm" class="btn-gray">Batal</button>
+                    <button wire:click="saveItem" class="btn-green">Simpan</button>
                 </div>
             </div>
         @endif
 
-        {{-- SERVICE AKTIF --}}
-        @if($activeService)
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {{-- LIST ITEM --}}
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            @foreach($serviceItems as $item)
+                <div class="bg-[#0b1220] p-5 rounded-2xl shadow-lg hover:shadow-2xl
+            transform hover:-translate-y-1 transition-all
+            border border-gray-800 relative">
 
-                {{-- DAFTAR SERVICE --}}
-                <div class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-xl p-6">
-                    <h2 class="font-semibold mb-4 text-orange-300">Pilih Jenis Service</h2>
 
-                    <table class="w-full text-sm">
-                        <thead class="text-gray-400 border-b border-white/10">
-                            <tr>
-                                <th class="py-2 text-left">Service</th>
-                                <th class="py-2">Harga</th>
-                                <th class="py-2 text-right">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($masters as $m)
-                                <tr wire:key="master-{{ $m->id }}" class="border-b border-white/5">
-                                    <td class="py-2">{{ $m->name }}</td>
-                                    <td class="py-2 text-center">
-                                        Rp {{ number_format($m->price,0,',','.') }}
-                                    </td>
-                                    <td class="py-2 text-right">
-                                        <button wire:click.prevent="addItem({{ $m->id }})"
-                                                class="bg-sky-600 hover:bg-sky-700 px-3 py-1 rounded text-xs">
-                                            Tambah
-                                        </button>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="3" class="text-center text-gray-500 py-6">
-                                        Service belum tersedia
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+                    {{-- IMAGE --}}
+                    @if($item->image)
+                        <img src="{{ asset('storage/'.$item->image) }}" alt="{{ $item->item_name }}" class="w-full h-36 object-cover rounded-xl mb-3">
+                    @endif
+
+                    {{-- NAMA ITEM & ADMIN BUTTONS --}}
+                    <div class="flex justify-between items-start">
+                        <h3 class="font-semibold text-lg text-white">{{ $item->item_name }}</h3>
+                        @if(auth()->user()->role === 'admin')
+                            <div class="flex gap-2">
+                                <button wire:click="editItem({{ $item->id }})" class="text-blue-400 hover:text-blue-300 text-sm font-semibold">Edit</button>
+                                <button wire:click="deleteItem({{ $item->id }})" class="text-red-500 hover:text-red-400 text-sm font-semibold">Hapus</button>
+                            </div>
+                        @endif
+                    </div>
+
+                    <p class="text-gray-400 text-sm mt-1">{{ $item->category }}</p>
+                    <p class="text-emerald-400 font-bold text-lg mt-3">Rp {{ number_format($item->price,0,',','.') }}</p>
+                    <span class="inline-block mt-2 px-2 py-1 text-xs font-semibold rounded-full
+                        {{ $item->stock > 5 ? 'bg-emerald-600 text-white' : ($item->stock > 0 ? 'bg-yellow-500 text-black' : 'bg-red-500 text-white') }}">
+                        Stok: {{ $item->stock }}
+                    </span>
+
+                    {{-- TOMBOL + KERANJANG --}}
+                    @if($item->stock > 0 && auth()->user()->role !== 'admin')
+                        <button wire:click="addToCart({{ $item->id }})"
+                            class="absolute top-3 right-3 bg-emerald-600 p-2 rounded-full hover:bg-emerald-700 transition text-lg">
+                            🛒
+                        </button>
+                    @endif
+                </div>
+            @endforeach
+        </div>
+    @endif
+
+    {{-- ================= JASA ================= --}}
+    @if($activeTab === 'jasa')
+        @if(auth()->user()->role === 'admin')
+            <div class="bg-gray-900 p-6 rounded-2xl shadow-xl mb-10 border border-gray-700">
+                <h2 class="text-xl font-semibold mb-5 flex items-center gap-2 text-emerald-400">
+                    <span class="text-2xl">+</span> Tambah / Edit Jasa
+                </h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <input type="text" wire:model="service_name" placeholder="Nama Jasa" class="input-dark">
+                    <input type="number" wire:model="service_price" placeholder="Harga" class="input-dark">
                 </div>
 
-                {{-- NOTA --}}
-                <div class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-xl p-6">
-                    <h2 class="font-semibold mb-4 text-orange-300">Nota Service</h2>
+                <div class="flex justify-end mt-5 gap-3">
+                    <button wire:click="resetForm" class="btn-gray">Batal</button>
+                    <button wire:click="saveService" class="btn-green">Simpan</button>
+                </div>
+            </div>
+        @endif
 
-                    @forelse($activeService->items as $item)
-                        <div wire:key="item-{{ $item->id }}"
-                             class="flex justify-between items-center border-b border-white/10 py-2 text-sm">
-                            <span>{{ $item->item_name }}</span>
-                            <div class="flex items-center gap-2">
-                                <span>Rp {{ number_format($item->price,0,',','.') }}</span>
-                                <button wire:click.prevent="removeItem({{ $item->id }})"
-                                        class="text-red-400 hover:text-red-500">
-                                    ✕
-                                </button>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            @foreach($services as $s)
+                <div class="bg-[#0b1220] p-5 rounded-2xl shadow-lg hover:shadow-2xl
+    transform hover:-translate-y-1 transition-all border border-gray-800 relative">
+
+    <div class="flex justify-between items-start">
+        <h3 class="font-semibold text-lg text-white">{{ $s->name }}</h3>
+
+        @if(auth()->user()->role === 'admin')
+            <div class="flex gap-2">
+                <button wire:click="editService({{ $s->id }})"
+                    class="text-blue-400 hover:text-blue-300 text-sm font-semibold">Edit</button>
+
+                <button wire:click="deleteService({{ $s->id }})"
+                    class="text-red-500 hover:text-red-400 text-sm font-semibold">Hapus</button>
+            </div>
+        @endif
+    </div>
+
+    <p class="text-emerald-400 font-bold text-lg mt-3">
+        Rp {{ number_format($s->price,0,',','.') }}
+    </p>
+
+    {{-- tombol tambah ke keranjang --}}
+    @if(auth()->user()->role !== 'admin')
+        <button wire:click="addServiceToCart({{ $s->id }})"
+            class="absolute top-3 right-3 bg-emerald-600 p-2 rounded-full hover:bg-emerald-700 transition text-lg">
+            🛠️
+        </button>
+    @endif
+</div>
+
+            @endforeach
+        </div>
+    @endif
+
+    {{-- ================= FLOATING KERANJANG ================= --}}
+    @if(auth()->user()->role !== 'admin')
+        <button wire:click="$toggle('showCart')" 
+            class="fixed bottom-5 right-5 bg-emerald-600 text-white p-4 rounded-full shadow-lg hover:bg-emerald-700 transition z-50">
+            🛒 Keranjang ({{ count($cartData) }})
+        </button>
+    @endif
+
+    {{-- ================= DRAWER KERANJANG ================= --}}
+    @if($showCart)
+        <div class="fixed inset-0 bg-black/50 z-40 flex justify-end">
+            <div class="bg-gray-900 w-full md:w-1/3 p-6 h-full overflow-auto">
+                <h2 class="text-xl font-semibold text-white mb-4">Keranjang</h2>
+
+                @foreach($cartData as $id => $item)
+                    <div class="bg-gray-800 p-3 rounded-xl mb-3 flex justify-between">
+                        <div>
+                            <p class="text-white font-semibold">{{ $item['name'] }}</p>
+                            <p class="text-gray-400 text-sm">Rp {{ number_format($item['price'],0,',','.') }}</p>
+                            <p class="text-gray-400 text-sm">Qty: {{ $item['qty'] }}</p>
+                        </div>
+                        <button wire:click="removeFromCart({{ $id }})" class="text-red-500 hover:text-red-400">✖</button>
+                    </div>
+                @endforeach
+
+                {{-- Pilih metode service --}}
+                <div class="mb-4 flex gap-4">
+                    <button wire:click="$set('serviceType','bengkel')"
+                        class="px-4 py-2 rounded-lg font-semibold transition
+                        {{ $serviceType === 'bengkel' ? 'bg-emerald-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700' }}">
+                        Service di Bengkel
+                    </button>
+                    <button wire:click="$set('serviceType','home')"
+                        class="px-4 py-2 rounded-lg font-semibold transition
+                        {{ $serviceType === 'home' ? 'bg-emerald-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700' }}">
+                        Service di Rumah
+                    </button>
+                </div>
+
+                {{-- Form Service Master --}}
+                @if($serviceType && $selectedServiceMaster)
+                    @php $master = \App\Models\ServiceMaster::find($selectedServiceMaster); @endphp
+                    @if($master)
+                        <div class="bg-gray-800 p-4 rounded-xl mb-4">
+                            <h3 class="text-lg font-semibold text-white">{{ $master->service_name }}</h3>
+                            <p class="text-emerald-400 font-bold mt-2">Rp {{ number_format($master->price,0,',','.') }}</p>
+
+                            <div class="grid grid-cols-2 gap-4 mt-3">
+                                <input type="date" wire:model="serviceDate" class="input-dark">
+                                <input type="time" wire:model="serviceTime" class="input-dark">
                             </div>
                         </div>
-                    @empty
-                        <p class="text-gray-500">Belum ada service dipilih</p>
-                    @endforelse
+                    @endif
+                @endif
 
-                    <div class="mt-4 flex justify-between font-bold text-lg">
-                        <span>Total</span>
-                        <span class="text-orange-400">
-                            Rp {{ number_format($activeService->total_price,0,',','.') }}
-                        </span>
-                    </div>
-
-                    <button wire:click.prevent="finishService({{ $activeService->id }})"
-                            class="w-full mt-6
-                                   bg-emerald-600 hover:bg-emerald-700
-                                   py-3 rounded-lg font-semibold transition">
-                        Selesaikan Service
+                <div class="flex justify-between items-center mt-4">
+                    <p class="text-white font-semibold">
+                        Total: Rp {{ number_format($this->calculateTotal(),0,',','.') }}
+                    </p>
+                    <button wire:click="checkoutCart" class="px-5 py-2 bg-emerald-600 rounded-lg hover:bg-emerald-700 transition">
+                        Checkout / Booking
                     </button>
                 </div>
             </div>
-        @endif
-
-        {{-- RIWAYAT --}}
-        <div>
-            <h2 class="text-xl font-bold mb-4">Riwayat Service</h2>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                @forelse($this->historyServices as $s)
-                    <div wire:key="history-{{ $s->id }}"
-                         class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-4 shadow">
-                        <h3 class="font-semibold">{{ $s->car_name }}</h3>
-                        <p class="text-sm text-gray-400">{{ $s->customer_name }}</p>
-                        <p class="mt-2 font-bold text-orange-400">
-                            Rp {{ number_format($s->total_price,0,',','.') }}
-                        </p>
-                        <p class="text-xs text-gray-500">
-                            Status: {{ ucfirst($s->status) }}
-                        </p>
-                    </div>
-                @empty
-                    <p class="text-gray-500 col-span-full">Belum ada riwayat service</p>
-                @endforelse
-            </div>
         </div>
+    @endif
 
-    </div>
+    {{-- ================ STYLING ================= --}}
+    <style>
+        .input-dark {
+            @apply w-full p-3 rounded-lg bg-gray-800 border border-gray-700 text-white focus:outline-none focus:ring-emerald-500 focus:border-emerald-500;
+        }
+        .file-input-dark {
+            @apply w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-700 file:text-white hover:file:bg-gray-600;
+        }
+        .btn-gray {
+            @apply px-5 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition;
+        }
+        .btn-green {
+            @apply px-5 py-2 bg-emerald-600 rounded-lg hover:bg-emerald-700 transition;
+        }
+    </style>
 </div>

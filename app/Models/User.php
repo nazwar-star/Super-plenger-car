@@ -45,4 +45,14 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+    public function carOrders()
+    {
+        return $this->hasMany(CarOrder::class);
+    }
+    public function isAdmin()
+{
+    return $this->role === 'admin';
+}
+
+
 }

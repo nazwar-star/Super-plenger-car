@@ -5,6 +5,7 @@ namespace App\Livewire;
 use Livewire\Component;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
 
 class Register extends Component
 {
@@ -23,18 +24,21 @@ class Register extends Component
     {
         $this->validate();
 
-        User::create([
-            'name'     => $this->name,
-            'email'    => $this->email,
-            'password' => Hash::make($this->password),
-            'role'     => 'user', // DEFAULT USER
+        $user = User::create([
+            'name' => $this->name,
+            'email' => $this->email,
+            'password' => Hash::make($this->password), // ✅ WAJIB HASH
         ]);
 
-        return redirect()->route('login');
+        // ✅ AUTO LOGIN YANG BENAR
+        Auth::login($user);
+
+        return redirect()->route('home');
     }
 
     public function render()
     {
-        return view('livewire.register')->layout('layouts.app');
+        return view('livewire.register')
+            ->layout('layouts.guest');
     }
 }

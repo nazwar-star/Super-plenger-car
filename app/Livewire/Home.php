@@ -10,8 +10,11 @@ class Home extends Component
     public function render()
     {
         return view('livewire.home', [
-            // 🔥 cuma buat perkenalan
-            'cars' => Car::latest()->take(3)->get(),
-        ]);
+            // 🔥 ambil 6 mobil dari stock
+            'featuredCars' => Car::where('stock', '>', 0)
+                                ->latest()
+                                ->take(6)
+                                ->get()
+        ])->layout('layouts.app');
     }
 }

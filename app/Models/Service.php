@@ -12,11 +12,7 @@ class Service extends Model
         'plate_number',
         'service_date',
         'status',
-        'total_price'
+        'total_price',
+        'estimated_finish'
     ];
-
-    public function items()
-    {
-        return $this->hasMany(ServiceItem::class);
-    }
 }

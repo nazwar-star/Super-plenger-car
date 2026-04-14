@@ -1,128 +1,236 @@
-<div class="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-black text-gray-100">
-    <div class="max-w-7xl mx-auto px-6 py-10 space-y-8">
+    <div class="min-h-screen bg-gradient-to-br from-[#020617] via-[#050b17] to-black text-slate-100"
+        x-data="{
+        tab: 'desc',
+        showGallery: false,
+        checkoutOpen: false,
+        orderType: 'rental',
+        agree: false,
+        paymentMethod: 'transfer'
+    }">
 
-        {{-- Header --}}
-        <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-            <div>
-                <h1 class="text-4xl font-extrabold tracking-wide">{{ $car->name }}</h1>
-                <p class="text-gray-400 mt-1">{{ $car->brand }} • Tahun {{ $car->year }}</p>
-            </div>
-            <a href="{{ route('showroom') }}" class="bg-gray-800 hover:bg-gray-700 px-5 py-2 rounded-lg shadow font-semibold transition">
-                ← Kembali ke Showroom
-            </a>
-        </div>
+        <main class="max-w-7xl mx-auto px-6 py-12 space-y-16">
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
-
-            {{-- LEFT : IMAGE --}}
-            <div class="space-y-4">
-                <div class="relative rounded-xl overflow-hidden shadow-2xl border border-white/10 bg-black">
-                    <img src="{{ asset('storage/'.$car->photo) }}" class="w-full h-[420px] object-cover hover:scale-105 transition duration-700">
+            {{-- HEADER --}}
+            <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+                <div>
+                    <h1 class="text-4xl font-extrabold">{{ $car->name }}</h1>
+                    <p class="text-gray-400">{{ $car->brand }} • {{ $car->year }}</p>
                 </div>
+                <a href="{{ route('home') }}"
+                class="bg-gray-800 hover:bg-gray-700 px-5 py-2 rounded-lg">
+                    ← Back
+                </a>
             </div>
 
-            {{-- RIGHT : INFO --}}
-            <div class="space-y-6">
+            {{-- IMAGE + INFO --}}
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
 
-                {{-- PRICE --}}
-                <div class="bg-white/5 backdrop-blur rounded-xl p-5 shadow-lg border border-white/10">
-                    <p class="text-2xl font-bold text-green-700">
-                        Harga Beli : <span class="text-green-800"> Rp {{ number_format($car->sale_price, 0, ',', '.') }} </span>
-                    </p>
-                    <p class="text-2xl font-bold text-blue-600">
-                        Harga Rental : <span class="text-blue-700"> Rp {{ number_format($car->rental_price, 0, ',', '.') }}/hari </span>
-                    </p>
-                    <p class="text-gray-400 mt-2"> Stok tersedia: <span class="font-bold">{{ $car->stock }}</span> </p>
-                </div>
+                {{-- IMAGE SLIDER --}}
+                <div class="lg:col-span-2"
+                    x-data="{
+                        active: 0,
+                        images: @js(
+                            collect([$car->photo])
+                                ->merge($car->images->pluck('image_path'))
+                                ->filter()
+                                ->values()
+                        )
+                    }">
 
-                {{-- SPEC --}}
-                @if($car->mileage || $car->exterior_color)
-                    <div class="bg-white/5 backdrop-blur rounded-xl p-5 border border-white/10">
-                        <h2 class="text-lg font-semibold mb-3 border-b border-white/10 pb-2">Spesifikasi</h2>
-                        <table class="w-full text-gray-300">
-                            @if($car->mileage)<tr><td>Mileage</td><td>{{ $car->mileage }}</td></tr>@endif
-                            @if($car->exterior_color)<tr><td>Exterior</td><td>{{ $car->exterior_color }}</td></tr>@endif
-                            @if($car->interior_color)<tr><td>Interior</td><td>{{ $car->interior_color }}</td></tr>@endif
-                            @if($car->trim)<tr><td>Trim</td><td>{{ $car->trim }}</td></tr>@endif
-                            @if($car->driver_position)<tr><td>Driver</td><td>{{ $car->driver_position }}</td></tr>@endif
-                        </table>
-                    </div>
-                @endif
+                    <div class="relative rounded-xl overflow-hidden border border-white/10 bg-black aspect-[3/2]">
 
-                {{-- BUY / RENT --}}
-                <div class="bg-white/5 backdrop-blur rounded-xl p-5 border border-white/10 space-y-4">
-                    
-                    {{-- RENT DATE --}}
-                    @if(!$buy_selected)
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <input type="date" wire:model.lazy="start_date" class="bg-black/40 border border-white/10 rounded px-3 py-2">
-                            <input type="date" wire:model.lazy="end_date" class="bg-black/40 border border-white/10 rounded px-3 py-2">
-                        </div>
-                    @endif
+                        <template x-for="(img, i) in images" :key="i">
+                            <img x-show="active === i"
+                                :src="'/storage/' + img"
+                                @click="showGallery = true"
+                                class="w-full h-full object-contain cursor-pointer transition"
+                                x-transition>
+                        </template>
 
-                    {{-- BUY BUTTON --}}
-                    @if(!$buy_selected && !$rental_selected)
-                        <button wire:click="selectBuy" class="w-full bg-emerald-600 hover:bg-emerald-700 py-3 rounded-lg font-bold">
-                            Beli Sekarang
+                        <button @click="active = active === 0 ? images.length - 1 : active - 1"
+                                class="absolute left-4 top-1/2 -translate-y-1/2
+                                    bg-black/60 hover:bg-black px-4 py-2 rounded-full">
+                            ‹
                         </button>
-                    @endif
 
-                    {{-- TOTAL --}}
-                    @if($total_price > 0)
-                        <div class="text-sm text-gray-300">
-                            <p>Total Harga: <b>Rp {{ number_format($total_price,0,',','.') }}</b></p>
-                            <p>DP {{ $dp_percent }}%: <b>Rp {{ number_format($dp_amount,0,',','.') }}</b></p>
+                        <button @click="active = active === images.length - 1 ? 0 : active + 1"
+                                class="absolute right-4 top-1/2 -translate-y-1/2
+                                    bg-black/60 hover:bg-black px-4 py-2 rounded-full">
+                            ›
+                        </button>
+                    </div>
+                </div>
+
+                {{-- RIGHT PANEL (SATU KOLOM) --}}
+                <div class="sticky top-24 h-fit space-y-6">
+
+                    <div class="bg-white/5 p-6 rounded-xl border border-white/10 space-y-4">
+
+                        {{-- SALE PRICE --}}
+                        <div>
+                            <p class="text-sm text-gray-400">SALE PRICE</p>
+                            <p class="text-3xl font-bold">
+                                Rp {{ number_format($car->sale_price,0,',','.') }}
+                            </p>
                         </div>
-                    @endif
 
-                    {{-- PAYMENT --}}
-                    @if($show_payment)
-                        <div class="space-y-3">
-                            <p class="font-semibold">Metode Pembayaran</p>
-                            <div class="flex gap-3 flex-wrap">
+                        {{-- RENTAL PRICE --}}
+                        <div>
+                            <p class="text-sm text-gray-400">RENTAL / DAY</p>
+                            <p class="text-xl font-semibold text-emerald-400">
+                                Rp {{ number_format($car->rental_price,0,',','.') }}
+                            </p>
+                        </div>
 
-                                <button 
-                                    wire:click="pay('cash')" 
-                                    class="px-4 py-2 bg-sky-600 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-                                    @if($car->stock == 0) disabled @endif
-                                >
-                                    Cash
-                                </button>
+                        <hr class="border-white/10">
 
-                                <button 
-                                    wire:click="pay('transfer')" 
-                                    class="px-4 py-2 bg-yellow-500 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-                                    @if($car->stock == 0) disabled @endif
-                                >
-                                    Transfer
-                                </button>
+                        {{-- INFO --}}
+                        <div class="grid grid-cols-2 gap-3 text-sm">
+                            <p class="text-gray-400">Brand</p>
+                            <p class="font-semibold">{{ $car->brand }}</p>
 
-                                <button 
-                                    wire:click="pay('qris')" 
-                                    class="px-4 py-2 bg-gray-700 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-                                    @if($car->stock == 0) disabled @endif
-                                >
-                                    QRIS
-                                </button>
-                            </div>
+                            <p class="text-gray-400">Year</p>
+                            <p class="font-semibold">{{ $car->year }}</p>
 
-                            {{-- Tampilkan QRIS jika dipilih --}}
-                            @if($qris_url)
-                                <img src="{{ $qris_url }}" class="w-48 mt-3 rounded shadow">
+                            <p class="text-gray-400">Stock</p>
+                            <p class="font-semibold">{{ $car->stock }}</p>
+                        </div>
+
+                    </div>
+
+                    {{-- ACTION BUTTONS --}}
+                
+                <button
+                @click="checkoutOpen = true"
+                :disabled="{{ $car->stock <= 0 ? 'true' : 'false' }}"
+                class="w-full py-3 rounded-lg font-semibold text-center block
+                    {{ $car->stock > 0 ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-gray-600 cursor-not-allowed' }}">
+                {{ $car->stock > 0 ? 'Make an Enquiry' : 'Stok Habis' }}
+            </button>
+                    <a href="https://wa.me/6285787091311"
+                    target="_blank"
+                    class="w-full bg-emerald-600 hover:bg-emerald-700 py-3 rounded-lg
+                            font-semibold text-center block">
+                        WhatsApp
+                    </a>
+
+                </div>
+            </div>
+
+            {{-- TABS --}}
+            <div class="border-t border-white/10 pt-10">
+
+                <div class="flex gap-6 border-b border-white/10">
+                    <button @click="tab='desc'" :class="tab==='desc' ? 'border-b-2 text-white' : 'text-gray-400'">
+                        Description
+                    </button>
+                    <button @click="tab='opt'" :class="tab==='opt' ? 'border-b-2 text-white' : 'text-gray-400'">
+                        Options
+                    </button>
+                    <button @click="tab='vid'" :class="tab==='vid' ? 'border-b-2 text-white' : 'text-gray-400'">
+                        Video
+                    </button>
+                </div>
+
+                <div class="mt-8 text-gray-300 leading-relaxed">
+
+                    <div x-show="tab==='desc'">
+                        {!! nl2br(e($car->description)) !!}
+                    </div>
+
+                    <div x-show="tab==='opt'">
+                        @if($car->options->count())
+                            <ul class="list-disc pl-6 space-y-1">
+                                @foreach($car->options as $opt)
+                                    <li>{{ $opt->option }}</li>
+                                @endforeach
+                            </ul>
+                        @else
+                            <p class="text-gray-400">No options available.</p>
+                        @endif
+                    </div>
+
+                    <div x-show="tab==='vid'">
+                        @if($car->youtube_url)
+                            @php
+                                preg_match('/(youtu\.be\/|v=)([^&]+)/', $car->youtube_url, $m);
+                                $videoId = $m[2] ?? null;
+                            @endphp
+
+                            @if($videoId)
+                                <div class="aspect-video rounded-xl overflow-hidden border border-white/10 mt-4">
+                                    <iframe class="w-full h-full"
+                                            src="https://www.youtube.com/embed/{{ $videoId }}"
+                                            allowfullscreen></iframe>
+                                </div>
                             @endif
-                        </div>
-                    @endif
-
+                        @endif
+                    </div>
 
                 </div>
+            </div>
 
-                {{-- CONTACT --}}
-                <div class="flex gap-4">
-                    <a href="https://www.instagram.com/sakiyyl?igsh=bHVpZWNoaXQyaDlr" class="flex-1 bg-sky-600 hover:bg-sky-700 py-3 rounded-lg text-center font-semibold"> Call Ceo </a>
-                    <a href="https://wa.me/085787091311" target="_blank" class="flex-1 bg-emerald-600 hover:bg-emerald-700 py-3 rounded-lg text-center font-semibold"> WhatsApp </a>
+            {{-- RELATED CARS --}}
+            <div>
+                <h2 class="text-2xl font-bold mb-6">Similar Vehicles</h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    @foreach($relatedCars as $item)
+                        <a href="{{ route('car.detail',$item->id) }}"
+                        class="bg-white/5 rounded-xl overflow-hidden hover:scale-105 transition">
+                            <img src="{{ asset('storage/'.$item->photo) }}"
+                                class="h-48 w-full object-cover">
+                            <div class="p-4">
+                                <p class="font-semibold">{{ $item->name }}</p>
+                                <p class="text-sm text-gray-400">{{ $item->year }}</p>
+                            </div>
+                        </a>
+                    @endforeach
                 </div>
+            </div>
 
+        </main>
+
+        {{-- GALLERY MODAL --}}
+        <div x-show="showGallery"
+            x-transition
+            class="fixed inset-0 bg-black/90 z-50 flex items-center justify-center">
+
+            <button @click="showGallery=false"
+                    class="absolute top-6 right-6 text-3xl">✕</button>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 max-w-6xl">
+                @foreach(
+                    collect([$car->photo])
+                        ->merge($car->images->pluck('image_path'))
+                        ->filter()
+                    as $img
+                )
+                    <img src="{{ asset('storage/'.$img) }}"
+                        class="rounded-xl object-cover cursor-pointer hover:scale-105 transition"
+                        @click="showGallery=false">
+                @endforeach
             </div>
         </div>
+
+        {{-- CHECKOUT POPUP --}}
+<div
+    x-show="checkoutOpen"
+    x-transition.opacity
+    x-cloak
+    
+    class="fixed inset-0 z-50 bg-black/80 flex items-center justify-center px-4"
+>
+
+    <div
+        class="bg-[#020617] w-full max-w-lg rounded-xl shadow-xl max-h-[90vh] overflow-hidden"
+        @click.outside="checkoutOpen = false"
+    >
+        @livewire('checkout-car', ['car' => $car], key('checkout-'.$car->id))
     </div>
+
 </div>
+
+
+
+    </div>

@@ -7,31 +7,29 @@ use Illuminate\Support\Facades\Auth;
 
 class Login extends Component
 {
-    public $email, $password;
+    public $email;
+    public $password;
 
-    protected $rules = [
-        'email' => 'required|email',
-        'password' => 'required',
-    ];
-
-        public function login()
+    public function login()
     {
-        $this->validate();
-
-        if (Auth::attempt([
+        $credentials = [
             'email' => $this->email,
-            'password' => $this->password
-        ])) {
-            session()->regenerate();
-            return redirect()->route('showroom');
+            'password' => $this->password,
+        ];
+
+        if (!Auth::attempt($credentials)) {
+            session()->flash('error', 'Email atau password salah');
+            return;
         }
 
-        session()->flash('error', 'Email atau password salah');
-    }
+        request()->session()->regenerate();
 
+        return redirect()->route('home');
+    }
 
     public function render()
     {
-        return view('livewire.login')->layout('layouts.app');
+        return view('livewire.login')
+            ->layout('layouts.guest');
     }
 }
